@@ -24,12 +24,18 @@ def DEP_ME_1(Vbc, ne, Ap, fdc, Ned):
 # Radier
 
 def Mat60r(tipoTela, Ap):
-    if tipoTela == "Q-113": return 1.80 * Ap * 2 # SINAPI
-    elif tipoTela == "Q-138": return 2.20 * Ap * 2 # SINAPI
-    elif tipoTela == "Q-159": return 2.52 * Ap * 2 # SINAPI
-    elif tipoTela == "Q-196": return 3.11 * Ap * 2 # SINAPI
-    elif tipoTela == "Q-283": return 4.48 * Ap * 2 # SINAPI
-    elif tipoTela == "Q-503": return 7.93 * Ap * 2 # Gerdau
+    if tipoTela == "Q-113":
+        return 1.80 * Ap * 2 # SINAPI
+    elif tipoTela == "Q-138":
+        return 2.20 * Ap * 2 # SINAPI
+    elif tipoTela == "Q-159":
+        return 2.52 * Ap * 2 # SINAPI
+    elif tipoTela == "Q-196":
+        return 3.11 * Ap * 2 # SINAPI
+    elif tipoTela == "Q-283":
+        return 4.48 * Ap * 2 # SINAPI
+    elif tipoTela == "Q-503":
+        return 7.93 * Ap * 2 # Gerdau
 
 def Mab50r(er, Ap):
     return 7850 * 0.60 * 0.01 * er * Ap
@@ -77,11 +83,11 @@ def ECO2_ES(Ve, fec, Mab50e, fea50, Mab60e, fea60, Ned):
 def DEP_ES(Ve, fdc, Mab50e, fda50, Mab60e, fda60, Ned):
     return round((Ve * fdc + Mab50e * fda50 + Mab60e * fda60) * Ned)
 
-def ECO2_ME(Vbc, Vvb, Vci, fec, Mab50bc, Mab50vb, Mab50ci, fea50, Mab60bc, Mab60vb, Mab60ci, fea60, Ned):
-    return round(((Vbc + Vvb + Vci) * fec + (Mab50bc + Mab50vb + Mab50ci) * fea50 + (Mab60bc + Mab60vb + Mab60ci) * fea60) * Ned)
+def ECO2_ME(Vbc, Vvi, fec, Mab50bc, Mab50vi, fea50, Mab60bc, Mab60vi, fea60, Ned):
+    return round(((Vbc + Vvi) * fec + (Mab50bc + Mab50vi) * fea50 + (Mab60bc + Mab60vi) * fea60) * Ned)
 
-def DEP_ME(Vbc, Vvb, Vci, fdc, Mab50bc, Mab50vb, Mab50ci, fda50, Mab60bc, Mab60vb, Mab60ci, fda60, Ned):
-    return round(((Vbc + Vvb + Vci) * fdc + (Mab50bc + Mab50vb + Mab50ci) * fda50 + (Mab60bc + Mab60vb + Mab60ci) * fda60) * Ned)
+def DEP_ME(Vbc, Vvi, fdc, Mab50bc, Mab50vi, fda50, Mab60bc, Mab60vi, fda60, Ned):
+    return round(((Vbc + Vvi) * fdc + (Mab50bc + Mab50vi) * fda50 + (Mab60bc + Mab60vi) * fda60) * Ned)
 
 def ECO2_RE(Ar, er, Ve, fec, Mat60r, Mab60r, Mab60e, fea60, Mab50r, Mab50e, fea50, Ned):
     return round(((Ar * er + Ve) * fec + (Mat60r + Mab60r + Mab60e) * fea60 + (Mab50r + Mab50e) * fea50) * Ned)
@@ -102,14 +108,14 @@ fda190 = fda50
 
 # APLICATIVO
 
-st.write("**CALCULADORA DE ECO2 E DEP INCORPORADAS NAS FUNDAÇÕES**")
+st.html("<h1 style='text-align: center; font-size: 1.5rem;'>CALCULADORA DE ECO2 E DEP INCORPORADAS NAS FUNDAÇÕES</h1>")
 
 cenario = st.selectbox(
     "Cenário",
     ("Estudo preliminar", "Projeto executivo"), index=None, help="""
 - Estudo preliminar: Estimativa com base em informações (preliminares ou não-definitivas)
 
-- Projeto executivo: Cálculo com base em informações completas (semidefinitas a definitivas)
+- Projeto executivo: Cálculo com base em informações completas (semidefinitivas a definitivas)
 """
 )
 
@@ -121,7 +127,7 @@ if cenario == "Estudo preliminar":
     if option == "Radier":
         Ned = st.number_input("Número de edifícios", min_value=1, step=1)
         Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
-        er = st.number_input("Espessura do radier (m)", min_value=0.100, max_value=0.450, step=0.001, format="%0.3f", help="""
+        er = st.number_input("Espessura do radier (m)", min_value=0.095, max_value=0.450, step=0.001, format="%0.3f", help="""
         Valores típicos
 
         - Casa térrea: 0.100 m
@@ -213,7 +219,7 @@ if cenario == "Estudo preliminar":
 elif cenario == "Projeto executivo":
     option = st.selectbox(
         "Módulo",
-        ("Radier", "Estaca", "Radier estaqueado", "Mesoestrutura"), index=None,
+        ("Radier", "Estacas + Blocos de coroamento + Vigas", "Radier estaqueado"), index=None,
     )
     if option == "Radier":
         Ned = st.number_input("Número de edifícios", min_value=1, step=1)
@@ -231,8 +237,13 @@ elif cenario == "Projeto executivo":
         st.write("**RESULTADOS**")
         st.write("ECO2 (kg): ", ECO2RAmin, " - ", ECO2RAmax)
         st.write("DEP (MJ): ", DEPRAmin, " - ", DEPRAmax)
-    elif option == "Estaca":
-        st.write("**CARACTERÍSTICAS DAS ESTACAS**")
+        Ac = st.number_input("Área construída (m2)", min_value=40.00, step=0.01)
+        st.write("**RESULTADOS POR ÁREA CONSTRUÍDA**")
+        st.write("ECO2 (kg/m2): ", round(ECO2RAmin / Ac), " - ", round(ECO2RAmax / Ac))
+        st.write("DEP (MJ/m2): ", round(DEPRAmin / Ac), " - ", round(DEPRAmax / Ac))
+    elif option == "Estacas + Blocos de coroamento + Vigas":
+        st.html("<h1 style='text-align: center; font-size: 1rem;'>ESTACAS</h1>")
+        st.write("**CARACTERÍSTICAS**")
         numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
         Sf, D, L = [], [], []
         for i in range(numEstDif):
@@ -252,6 +263,23 @@ elif cenario == "Projeto executivo":
         st.write("**RESULTADOS**")
         st.write("ECO2 (kg): ", ECO2ESmin, " - ", ECO2ESmax)
         st.write("DEP (MJ): ", DEPESmin, " - ", DEPESmax)
+        st.html("<h1 style='text-align: center; font-size: 1rem;'>MESOESTRUTURA</h1>")
+        st.write("BLOCOS DE COROAMENTO")
+        Vbc = st.number_input("Volume de blocos de coroamento (m3)", min_value=10.00, step=0.01)
+        Mab50bc = st.number_input("Massa de aço de barras CA-50 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
+        Mab60bc = st.number_input("Massa de aço de barras CA-60 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
+        st.write("VIGAS")
+        Vvi = st.number_input("Volume de vigas (m3)", min_value=10.00, step=0.01)
+        Mab50vi = st.number_input("Massa de aço de barras CA-50 das vigas (kg)", min_value=0.00, step=0.01)
+        Mab60vi = st.number_input("Massa de aço de barras CA-60 das vigas (kg)", min_value=0.00, step=0.01)
+        fck_ME = st.selectbox("fck (MPa)", (25, 30, 40), key="fck_ME")
+        ECO2MEmin = ECO2_ME(Vbc, Vvi, fec[fck_ME][0], Mab50bc, Mab50vi, fea50[0], Mab60bc, Mab60vi, fea60[0], Ned)
+        ECO2MEmax = ECO2_ME(Vbc, Vvi, fec[fck_ME][1], Mab50bc, Mab50vi, fea50[1], Mab60bc, Mab60vi, fea60[1], Ned)
+        DEPMEmin = DEP_ME(Vbc, Vvi, fdc[fck_ME][0], Mab50bc, Mab50vi, fda50[0], Mab60bc, Mab60vi, fda60[0], Ned)
+        DEPMEmax = DEP_ME(Vbc, Vvi, fdc[fck_ME][1], Mab50bc, Mab50vi, fda50[1], Mab60bc, Mab60vi, fda60[1], Ned)
+        st.write("**RESULTADOS**")
+        st.write("ECO2 (kg): ", ECO2MEmin, " - ", ECO2MEmax)
+        st.write("DEP (MJ): ", DEPMEmin, " - ", DEPMEmax)
     elif option == "Radier estaqueado":
         st.write("**CARACTERÍSTICAS DAS ESTACAS**")
         numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
@@ -278,22 +306,3 @@ elif cenario == "Projeto executivo":
         st.write("**RESULTADOS**")
         st.write("ECO2 (kg): ", ECO2REmin, " - ", ECO2REmax)
         st.write("DEP (MJ): ", DEPREmin, " - ", DEPREmax)
-    elif option == "Mesoestrutura":
-        Ned = st.number_input("Número de edifícios", min_value=1, step=1)
-        Vbc = st.number_input("Volume de blocos de coroamento (m3)", min_value=10.00, step=0.01)
-        Mab50bc = st.number_input("Massa de aço de barras CA-50 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
-        Mab60bc = st.number_input("Massa de aço de barras CA-60 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
-        Vvb = st.number_input("Volume de vigas baldrame (m3)", min_value=10.00, step=0.01)
-        Mab50vb = st.number_input("Massa de aço de barras CA-50 das vigas baldrame (kg)", min_value=0.00, step=0.01)
-        Mab60vb = st.number_input("Massa de aço de barras CA-60 das vigas baldrame (kg)", min_value=0.00, step=0.01)
-        Vci = st.number_input("Volume de cintas (m3)", min_value=10.00, step=0.01)
-        Mab50ci = st.number_input("Massa de aço de barras CA-50 das cintas (kg)", min_value=0.00, step=0.01)
-        Mab60ci = st.number_input("Massa de aço de barras CA-60 das cintas (kg)", min_value=0.00, step=0.01)
-        fck = st.selectbox("fck (MPa)", (25, 30, 40))
-        ECO2MEmin = ECO2_ME(Vbc, Vvb, Vci, fec[fck][0], Mab50bc, Mab50vb, Mab50ci, fea50[0], Mab60bc, Mab60vb, Mab60ci, fea60[0], Ned)
-        ECO2MEmax = ECO2_ME(Vbc, Vvb, Vci, fec[fck][1], Mab50bc, Mab50vb, Mab50ci, fea50[1], Mab60bc, Mab60vb, Mab60ci, fea60[1], Ned)
-        DEPMEmin = DEP_ME(Vbc, Vvb, Vci, fdc[fck][0], Mab50bc, Mab50vb, Mab50ci, fda50[0], Mab60bc, Mab60vb, Mab60ci, fda60[0], Ned)
-        DEPMEmax = DEP_ME(Vbc, Vvb, Vci, fdc[fck][1], Mab50bc, Mab50vb, Mab50ci, fda50[1], Mab60bc, Mab60vb, Mab60ci, fda60[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2MEmin, " - ", ECO2MEmax)
-        st.write("DEP (MJ): ", DEPMEmin, " - ", DEPMEmax)
