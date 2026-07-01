@@ -108,204 +108,261 @@ fda190 = fda50
 
 # APLICATIVO
 
+st.set_page_config(page_title="Calculadora de ECO2 e DEP", page_icon=":material/calculate:")
+
 st.html("<h1 style='text-align: center; font-size: 1.5rem;'>CALCULADORA DE ECO2 E DEP INCORPORADAS NAS FUNDAÇÕES 🌍🏗️🧮</h1>")
 st.html("<h1 style='text-align: center; font-size: 1.2rem; font-style: italic;'>Desenvolvido por Rhonner Ramírez no Departamento de Geotecnia - EESC/USP</h1>")
 
-cenario = st.selectbox(
-    "Cenário",
-    ("Estudo preliminar", "Projeto executivo"), index=None, help="""
-- Estudo preliminar: Estimativa com base em informações (preliminares ou não-definitivas)
+with st.sidebar:
+    with st.expander("Manual"):
+        st.write("""
+        # Objetivo
 
-- Projeto executivo: Cálculo com base em informações completas (semidefinitivas a definitivas)
-"""
-)
+        Desenvolver uma calculadora que permita otimizar o desempenho ambiental dos projetos de fundações com base nos indicadores de ECO2 e DEP.
 
-if cenario == "Estudo preliminar":
-    option = st.selectbox(
-        "Tipo de fundação",
-        ("Radier", "Estaca", "Radier estaqueado"), index=None,
-    )
-    if option == "Radier":
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
-        er = st.number_input("Espessura do radier (m)", min_value=0.095, max_value=0.450, step=0.001, format="%0.3f", help="""
-        Valores típicos
+        # Marco teórico
 
-        - Casa térrea: 0.100 m
-        - Casa sobreposta e sobrado: 0.120 m - 0.150 m
+        A calculadora está alinhada com o marco teórico do SIDAC. Os indicadores dos materiais de construção (fatores) utilizados na versão atual foram tomados do SIDAC.
+
+        # Etapas do ciclo de vida
+
+        Atualmente, a calculadora considera só a etapa de produto. Os cálculos da etapa de construção serão desenvolvidos futuramente.
+
+        # Contato
+        
+        rhonnerprf@usp.br
+        """)
+    with st.expander("Glossário"):
+        st.write("""
+        - ECO2: Emissão de CO2
+        - DEP: Demanda de energia primária
+        """)
+    with st.expander("Futuras implementações"):
+        st.write("""
+        - [ ] Etapa de construção
+        - [ ] Soluções de mitigação por tipo de fundação
+        """)
+
+st.write("Etapa(s) do ciclo de vida")
+col1, col2 = st.columns(2)
+with col1:
+    etapaProd = st.checkbox("Produto")
+with col2:
+    etapaCons = st.checkbox("Construção")
+
+if etapaProd:
+    with st.container(border=True):
+        st.write("# Produto")
+
+        cenario = st.selectbox(
+            "Cenário",
+            ("Estudo preliminar", "Projeto executivo"), index=None, help="""
+        - Estudo preliminar: Estimativa com base em informações (preliminares ou não-definitivas)
+
+        - Projeto executivo: Cálculo com base em informações completas (semidefinitivas a definitivas)
         """
-                             )
-        tipoTela = st.selectbox("Tipo de tela",
-                                ("Q-113", "Q-138", "Q-159", "Q-196", "Q-283", "Q-503"), index=5,
         )
-        Mat60r = Mat60r(tipoTela, Ap)
-        st.write("Massa de aço de telas (kg)", round(Mat60r, 2))
-        Mab50r = Mab50r(er, Ap)
-        st.write("Massa de aço de barras CA-50 (kg)", round(Mab50r, 2))
-        Mab60r = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
-        Mac190r = st.number_input("Massa de aço de cordoalhas CP190 RB 12,7 (kg)", min_value=0.00, step=0.01, help="Concreto protendido")
-        fck = st.radio("fck (MPa)", (20, 25, 30))
-        ECO2RAmin = ECO2_RA(Ap, er, fec[fck][0], Mat60r, Mab60r, fea60[0], Mab50r, fea50[0], Mac190r, fea190, Ned)
-        ECO2RAmax = ECO2_RA(Ap, er, fec[fck][1], Mat60r, Mab60r, fea60[1], Mab50r, fea50[1], Mac190r, fea190, Ned)
-        DEPRAmin = DEP_RA(Ap, er, fdc[fck][0], Mat60r, Mab60r, fda60[0], Mab50r, fda50[0], Mac190r, fda190[0], Ned)
-        DEPRAmax = DEP_RA(Ap, er, fdc[fck][1], Mat60r, Mab60r, fda60[1], Mab50r, fda50[1], Mac190r, fda190[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2RAmin, " - ", ECO2RAmax)
-        st.write("DEP (MJ): ", DEPRAmin, " - ", DEPRAmax)
-    elif option == "Estaca":
-        st.write("**CARACTERÍSTICAS DAS ESTACAS**")
-        numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
-        Sf, D, L = [], [], []
-        for i in range(numEstDif):
-            Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
-            D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
-            L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
-        st.write("**PARÂMETROS QUANTITATIVOS**")
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
-        fck = st.selectbox("fck (MPa)", (25, 30, 40))
-        st.write("**ESTACA**")
-        geomEst = st.selectbox("Geometria da seção transversal da estaca",
-                               ("Circular", "Quadrada"), index=0,
-        )
-        diamLado = st.number_input("Diâmetro ou lado da estaca (m)", min_value=0.15, step=0.01)
-        Ae = Ae(geomEst, diamLado)
-        st.write("Área da seção transversal da estaca (m2): ", Ae)
-        Le = st.number_input("Comprimento da estaca (m)", min_value=5, step=1)
-        Mab50e = Msmin(diamLado, 7850)
-        st.write("Massa de aço CA-50 da estaca (kg)", Mab50e)
-        ne = st.number_input("Número de estacas por m2", min_value=0.16, step=0.01)
-        st.write("**BLOCO DE COROAMENTO**")
-        st.write("Volume do bloco de coroamento (m3)", Vbc(diamLado))
-        st.write("Massa de aço CA-50 do bloco de coroamento (kg)", Mab50bc(0.75 * 800, diamLado, 500000, 7850, 0.05))
-        ECO2ES_1_min = ECO2_ES_1(Ap, Mab50e, fec[fck][0], fea50[0], ne, Ae, Le, Ned)
-        ECO2ES_1_max = ECO2_ES_1(Ap, Mab50e, fec[fck][1], fea50[1], ne, Ae, Le, Ned)
-        DEPES_1_min = DEP_ES_1(Ap, Mab50e, fdc[fck][0], fda50[0], ne, Ae, Le, Ned)
-        DEPES_1_max = DEP_ES_1(Ap, Mab50e, fdc[fck][1], fda50[1], ne, Ae, Le, Ned)
-        st.write("**RESULTADOS DA FUNDAÇÃO**")
-        st.write("ECO2 (kg): ", ECO2ES_1_min, " - ", ECO2ES_1_max)
-        st.write("DEP (MJ): ", DEPES_1_min, " - ", DEPES_1_max)
-        st.write("**RESULTADOS DOS BLOCOS DE COROAMENTO**")
-        ECO2ME_1_min = ECO2_ME_1(Vbc(diamLado), ne, Ap, fec[fck][0], Ned)
-        ECO2ME_1_max = ECO2_ME_1(Vbc(diamLado), ne, Ap, fec[fck][1], Ned)
-        st.write("ECO2 (kg): ", ECO2ME_1_min, " - ", ECO2ME_1_max)
-        DEPME_1_min = DEP_ME_1(Vbc(diamLado), ne, Ap, fdc[fck][0], Ned)
-        DEPME_1_max = DEP_ME_1(Vbc(diamLado), ne, Ap, fdc[fck][1], Ned)
-        st.write("DEP (MJ): ", DEPME_1_min, " - ", DEPME_1_max)
-    elif option == "Radier estaqueado":
-        st.write("**CARACTERÍSTICAS DAS ESTACAS**")
-        numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
-        Sf, D, L = [], [], []
-        for i in range(numEstDif):
-            Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
-            D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
-            L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
-        st.write("**PARÂMETROS QUANTITATIVOS**")
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
-        er = st.number_input("Espessura do radier (m)", min_value=0.100, max_value=0.450, step=0.001, format="%0.3f")
-        Ae = st.number_input("Área da seção transversal da estaca (m2)", min_value=0.03, step=0.01)
-        Le = st.number_input("Comprimento da estaca (m)", min_value=5, step=1)
-        ne = st.number_input("Número de estacas por m2", min_value=0.16, step=0.01)
-        fck = st.selectbox("fck (MPa)", (25, 30))
-        Mar = st.number_input("Massa de aço do radier (kg)", min_value=0.00, step=0.01)
-        Mae = st.number_input("Massa de aço da estaca (kg)", min_value=0.00, step=0.01)
-        ECO2RE_1_min = ECO2_RE_1(er, ne, Ae, Le, Ap, fec[fck][0], Mar, Mae, fea50[0], Ned)
-        ECO2RE_1_max = ECO2_RE_1(er, ne, Ae, Le, Ap, fec[fck][1], Mar, Mae, fea50[1], Ned)
-        DEPRE_1_min = DEP_RE_1(er, ne, Ae, Le, Ap, fdc[fck][0], Mar, Mae, fda50[0], Ned)
-        DEPRE_1_max = DEP_RE_1(er, ne, Ae, Le, Ap, fdc[fck][1], Mar, Mae, fda50[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2RE_1_min, " - ", ECO2RE_1_max)
-        st.write("DEP (MJ): ", DEPRE_1_min, " - ", DEPRE_1_max)
-elif cenario == "Projeto executivo":
-    option = st.selectbox(
-        "Tipo de fundação",
-        ("Radier", "Estacas + Blocos de coroamento + Vigas", "Radier estaqueado"), index=None,
-    )
-    if option == "Radier":
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        st.write("**CONCRETO**")
-        Ar = st.number_input("Área do radier (m2)", min_value=40.00, step=0.01)
-        er = st.number_input("Espessura do radier (m)", min_value=0.095, max_value=0.450, step=0.001, format="%0.3f")
-        fck = st.selectbox("fck (MPa)", (20, 25, 30))
-        st.write("**AÇO**")
-        Mat60r = st.number_input("Massa de aço de telas (kg)", min_value=0.00, step=0.01)
-        Mab50r = st.number_input("Massa de aço de barras CA-50 (kg)", min_value=0.00, step=0.01)
-        Mab60r = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
-        Mac190r = st.number_input("Massa de aço de cordoalhas CP190 RB 12,7 (kg)", min_value=0.00, step=0.01, help="Concreto protendido")
-        ECO2RAmin = ECO2_RA(Ar, er, fec[fck][0], Mat60r, Mab60r, fea60[0], Mab50r, fea50[0], Mac190r, fea190, Ned)
-        ECO2RAmax = ECO2_RA(Ar, er, fec[fck][1], Mat60r, Mab60r, fea60[1], Mab50r, fea50[1], Mac190r, fea190, Ned)
-        DEPRAmin = DEP_RA(Ar, er, fdc[fck][0], Mat60r, Mab60r, fda60[0], Mab50r, fda50[0], Mac190r, fda190[0], Ned)
-        DEPRAmax = DEP_RA(Ar, er, fdc[fck][1], Mat60r, Mab60r, fda60[1], Mab50r, fda50[1], Mac190r, fda190[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2RAmin, " - ", ECO2RAmax)
-        st.write("DEP (MJ): ", DEPRAmin, " - ", DEPRAmax)
-        st.write("**RESULTADOS POR ÁREA CONSTRUÍDA**")
-        Ac = st.number_input("Área construída (m2)", min_value=40.00, step=0.01)
-        st.write("ECO2 (kg/m2): ", round(ECO2RAmin / Ac), " - ", round(ECO2RAmax / Ac))
-        st.write("DEP (MJ/m2): ", round(DEPRAmin / Ac), " - ", round(DEPRAmax / Ac))
-    elif option == "Estacas + Blocos de coroamento + Vigas":
-        st.html("<h1 style='text-align: center; font-size: 1rem;'>ESTACAS</h1>")
-        st.write("**CARACTERÍSTICAS**")
-        numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
-        Sf, D, L = [], [], []
-        for i in range(numEstDif):
-            Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
-            D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
-            L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
-        st.write("**PARÂMETROS QUANTITATIVOS**")
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        Ve = st.number_input("Volume das estacas (m3)", min_value=10.00, step=0.01)
-        Mab50e = st.number_input("Massa de aço de barras CA-50 (kg)", min_value=0.00, step=0.01)
-        Mab60e = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
-        fck = st.selectbox("fck (MPa)", (25, 30, 40))
-        ECO2ESmin = ECO2_ES(Ve, fec[fck][0], Mab50e, fea50[0], Mab60e, fea60[0], Ned)
-        ECO2ESmax = ECO2_ES(Ve, fec[fck][1], Mab50e, fea50[1], Mab60e, fea60[1], Ned)
-        DEPESmin = DEP_ES(Ve, fdc[fck][0], Mab50e, fda50[0], Mab60e, fda60[0], Ned)
-        DEPESmax = DEP_ES(Ve, fdc[fck][1], Mab50e, fda50[1], Mab60e, fda60[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2ESmin, " - ", ECO2ESmax)
-        st.write("DEP (MJ): ", DEPESmin, " - ", DEPESmax)
-        st.html("<h1 style='text-align: center; font-size: 1rem;'>MESOESTRUTURA</h1>")
-        st.write("BLOCOS DE COROAMENTO")
-        Vbc = st.number_input("Volume de blocos de coroamento (m3)", min_value=10.00, step=0.01)
-        Mab50bc = st.number_input("Massa de aço de barras CA-50 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
-        Mab60bc = st.number_input("Massa de aço de barras CA-60 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
-        st.write("VIGAS")
-        Vvi = st.number_input("Volume de vigas (m3)", min_value=10.00, step=0.01)
-        Mab50vi = st.number_input("Massa de aço de barras CA-50 das vigas (kg)", min_value=0.00, step=0.01)
-        Mab60vi = st.number_input("Massa de aço de barras CA-60 das vigas (kg)", min_value=0.00, step=0.01)
-        fck_ME = st.selectbox("fck (MPa)", (25, 30, 40), key="fck_ME")
-        ECO2MEmin = ECO2_ME(Vbc, Vvi, fec[fck_ME][0], Mab50bc, Mab50vi, fea50[0], Mab60bc, Mab60vi, fea60[0], Ned)
-        ECO2MEmax = ECO2_ME(Vbc, Vvi, fec[fck_ME][1], Mab50bc, Mab50vi, fea50[1], Mab60bc, Mab60vi, fea60[1], Ned)
-        DEPMEmin = DEP_ME(Vbc, Vvi, fdc[fck_ME][0], Mab50bc, Mab50vi, fda50[0], Mab60bc, Mab60vi, fda60[0], Ned)
-        DEPMEmax = DEP_ME(Vbc, Vvi, fdc[fck_ME][1], Mab50bc, Mab50vi, fda50[1], Mab60bc, Mab60vi, fda60[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2MEmin, " - ", ECO2MEmax)
-        st.write("DEP (MJ): ", DEPMEmin, " - ", DEPMEmax)
-    elif option == "Radier estaqueado":
-        st.write("**CARACTERÍSTICAS DAS ESTACAS**")
-        numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
-        Sf, D, L = [], [], []
-        for i in range(numEstDif):
-            Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
-            D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
-            L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
-        st.write("**PARÂMETROS QUANTITATIVOS**")
-        Ned = st.number_input("Número de edificações", min_value=1, step=1)
-        Ar = st.number_input("Área do radier (m2)", min_value=40.00, step=0.01)
-        er = st.number_input("Espessura do radier (m)", min_value=0.100, max_value=0.450, step=0.001, format="%0.3f")
-        Ve = st.number_input("Volume das estacas (m3)", min_value=10.00, step=0.01)
-        Mat60r = st.number_input("Massa de aço de telas do radier (kg)", min_value=0.00, step=0.01)
-        Mab60r = st.number_input("Massa de aço de barras CA-60 do radier (kg)", min_value=0.00, step=0.01)
-        Mab60e = st.number_input("Massa de aço de barras CA-60 das estacas (kg)", min_value=0.00, step=0.01)
-        Mab50r = st.number_input("Massa de aço de barras CA-50 do radier (kg)", min_value=0.00, step=0.01)
-        Mab50e = st.number_input("Massa de aço de barras CA-50 das estacas (kg)", min_value=0.00, step=0.01)
-        fck = st.selectbox("fck (MPa)", (25, 30))
-        ECO2REmin = ECO2_RE(Ar, er, Ve, fec[fck][0], Mat60r, Mab60r, Mab60e, fea60[0], Mab50r, Mab50e, fea50[0], Ned)
-        ECO2REmax = ECO2_RE(Ar, er, Ve, fec[fck][1], Mat60r, Mab60r, Mab60e, fea60[1], Mab50r, Mab50e, fea50[1], Ned)
-        DEPREmin = DEP_RE(Ar, er, Ve, fdc[fck][0], Mat60r, Mab60r, Mab60e, fda60[0], Mab50r, Mab50e, fda50[0], Ned)
-        DEPREmax = DEP_RE(Ar, er, Ve, fdc[fck][1], Mat60r, Mab60r, Mab60e, fda60[1], Mab50r, Mab50e, fda50[1], Ned)
-        st.write("**RESULTADOS**")
-        st.write("ECO2 (kg): ", ECO2REmin, " - ", ECO2REmax)
-        st.write("DEP (MJ): ", DEPREmin, " - ", DEPREmax)
+
+        if cenario == "Estudo preliminar":
+            option = st.selectbox(
+                "Tipo de fundação",
+                ("Radier", "Estaca", "Radier estaqueado"), index=None,
+            )
+
+            if option == "Radier":
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
+                er = st.number_input("Espessura do radier (m)", min_value=0.095, max_value=0.450, step=0.001, format="%0.3f", help="""
+                Valores típicos
+
+                - Casa térrea: 0.100 m
+                - Casa sobreposta e sobrado: 0.120 m - 0.150 m
+                """
+                                    )
+                tipoTela = st.selectbox("Tipo de tela",
+                                        ("Q-113", "Q-138", "Q-159", "Q-196", "Q-283", "Q-503"), index=5,
+                )
+                Mat60r = Mat60r(tipoTela, Ap)
+                st.write("Massa de aço de telas (kg)", round(Mat60r, 2))
+                Mab50r = Mab50r(er, Ap)
+                st.write("Massa de aço de barras CA-50 (kg)", round(Mab50r, 2))
+                Mab60r = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
+                Mac190r = st.number_input("Massa de aço de cordoalhas CP190 RB 12,7 (kg)", min_value=0.00, step=0.01, help="Concreto protendido")
+                fck = st.radio("fck (MPa)", (20, 25, 30))
+                ECO2RAmin = ECO2_RA(Ap, er, fec[fck][0], Mat60r, Mab60r, fea60[0], Mab50r, fea50[0], Mac190r, fea190, Ned)
+                ECO2RAmax = ECO2_RA(Ap, er, fec[fck][1], Mat60r, Mab60r, fea60[1], Mab50r, fea50[1], Mac190r, fea190, Ned)
+                DEPRAmin = DEP_RA(Ap, er, fdc[fck][0], Mat60r, Mab60r, fda60[0], Mab50r, fda50[0], Mac190r, fda190[0], Ned)
+                DEPRAmax = DEP_RA(Ap, er, fdc[fck][1], Mat60r, Mab60r, fda60[1], Mab50r, fda50[1], Mac190r, fda190[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2RAmin, " - ", ECO2RAmax)
+                st.write("DEP (MJ): ", DEPRAmin, " - ", DEPRAmax)
+            elif option == "Estaca":
+                st.write("**CARACTERÍSTICAS DAS ESTACAS**")
+                numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
+                Sf, D, L = [], [], []
+                for i in range(numEstDif):
+                    Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
+                    D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
+                    L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
+                st.write("**PARÂMETROS QUANTITATIVOS**")
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
+                fck = st.selectbox("fck (MPa)", (25, 30, 40))
+                st.write("**ESTACA**")
+                geomEst = st.selectbox("Geometria da seção transversal da estaca",
+                                    ("Circular", "Quadrada"), index=0,
+                )
+                diamLado = st.number_input("Diâmetro ou lado da estaca (m)", min_value=0.15, step=0.01)
+                Ae = Ae(geomEst, diamLado)
+                st.write("Área da seção transversal da estaca (m2): ", Ae)
+                Le = st.number_input("Comprimento da estaca (m)", min_value=5, step=1)
+                Mab50e = Msmin(diamLado, 7850)
+                st.write("Massa de aço CA-50 da estaca (kg)", Mab50e)
+                ne = st.number_input("Número de estacas por m2", min_value=0.16, step=0.01)
+                st.write("**BLOCO DE COROAMENTO**")
+                st.write("Volume do bloco de coroamento (m3)", Vbc(diamLado))
+                st.write("Massa de aço CA-50 do bloco de coroamento (kg)", Mab50bc(0.75 * 800, diamLado, 500000, 7850, 0.05))
+                ECO2ES_1_min = ECO2_ES_1(Ap, Mab50e, fec[fck][0], fea50[0], ne, Ae, Le, Ned)
+                ECO2ES_1_max = ECO2_ES_1(Ap, Mab50e, fec[fck][1], fea50[1], ne, Ae, Le, Ned)
+                DEPES_1_min = DEP_ES_1(Ap, Mab50e, fdc[fck][0], fda50[0], ne, Ae, Le, Ned)
+                DEPES_1_max = DEP_ES_1(Ap, Mab50e, fdc[fck][1], fda50[1], ne, Ae, Le, Ned)
+                st.write("**RESULTADOS DA FUNDAÇÃO**")
+                st.write("ECO2 (kg): ", ECO2ES_1_min, " - ", ECO2ES_1_max)
+                st.write("DEP (MJ): ", DEPES_1_min, " - ", DEPES_1_max)
+                st.write("**RESULTADOS DOS BLOCOS DE COROAMENTO**")
+                ECO2ME_1_min = ECO2_ME_1(Vbc(diamLado), ne, Ap, fec[fck][0], Ned)
+                ECO2ME_1_max = ECO2_ME_1(Vbc(diamLado), ne, Ap, fec[fck][1], Ned)
+                st.write("ECO2 (kg): ", ECO2ME_1_min, " - ", ECO2ME_1_max)
+                DEPME_1_min = DEP_ME_1(Vbc(diamLado), ne, Ap, fdc[fck][0], Ned)
+                DEPME_1_max = DEP_ME_1(Vbc(diamLado), ne, Ap, fdc[fck][1], Ned)
+                st.write("DEP (MJ): ", DEPME_1_min, " - ", DEPME_1_max)
+            elif option == "Radier estaqueado":
+                st.write("**CARACTERÍSTICAS DAS ESTACAS**")
+                numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
+                Sf, D, L = [], [], []
+                for i in range(numEstDif):
+                    Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
+                    D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
+                    L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
+                st.write("**PARÂMETROS QUANTITATIVOS**")
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                Ap = st.number_input("Área construída projetada (m2)", min_value=40.00, step=0.01)
+                er = st.number_input("Espessura do radier (m)", min_value=0.100, max_value=0.450, step=0.001, format="%0.3f")
+                Ae = st.number_input("Área da seção transversal da estaca (m2)", min_value=0.03, step=0.01)
+                Le = st.number_input("Comprimento da estaca (m)", min_value=5, step=1)
+                ne = st.number_input("Número de estacas por m2", min_value=0.16, step=0.01)
+                fck = st.selectbox("fck (MPa)", (25, 30))
+                Mar = st.number_input("Massa de aço do radier (kg)", min_value=0.00, step=0.01)
+                Mae = st.number_input("Massa de aço da estaca (kg)", min_value=0.00, step=0.01)
+                ECO2RE_1_min = ECO2_RE_1(er, ne, Ae, Le, Ap, fec[fck][0], Mar, Mae, fea50[0], Ned)
+                ECO2RE_1_max = ECO2_RE_1(er, ne, Ae, Le, Ap, fec[fck][1], Mar, Mae, fea50[1], Ned)
+                DEPRE_1_min = DEP_RE_1(er, ne, Ae, Le, Ap, fdc[fck][0], Mar, Mae, fda50[0], Ned)
+                DEPRE_1_max = DEP_RE_1(er, ne, Ae, Le, Ap, fdc[fck][1], Mar, Mae, fda50[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2RE_1_min, " - ", ECO2RE_1_max)
+                st.write("DEP (MJ): ", DEPRE_1_min, " - ", DEPRE_1_max)
+        elif cenario == "Projeto executivo":
+            option = st.selectbox(
+                "Tipo de fundação",
+                ("Radier", "Estacas + Blocos de coroamento + Vigas", "Radier estaqueado"), index=None,
+            )
+            if option == "Radier":
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                st.write("**CONCRETO**")
+                Ar = st.number_input("Área do radier (m2)", min_value=40.00, step=0.01)
+                er = st.number_input("Espessura do radier (m)", min_value=0.095, max_value=0.450, step=0.001, format="%0.3f")
+                fck = st.selectbox("fck (MPa)", (20, 25, 30))
+                st.write("**AÇO**")
+                Mat60r = st.number_input("Massa de aço de telas (kg)", min_value=0.00, step=0.01)
+                Mab50r = st.number_input("Massa de aço de barras CA-50 (kg)", min_value=0.00, step=0.01)
+                Mab60r = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
+                Mac190r = st.number_input("Massa de aço de cordoalhas CP190 RB 12,7 (kg)", min_value=0.00, step=0.01, help="Concreto protendido")
+                ECO2RAmin = ECO2_RA(Ar, er, fec[fck][0], Mat60r, Mab60r, fea60[0], Mab50r, fea50[0], Mac190r, fea190, Ned)
+                ECO2RAmax = ECO2_RA(Ar, er, fec[fck][1], Mat60r, Mab60r, fea60[1], Mab50r, fea50[1], Mac190r, fea190, Ned)
+                DEPRAmin = DEP_RA(Ar, er, fdc[fck][0], Mat60r, Mab60r, fda60[0], Mab50r, fda50[0], Mac190r, fda190[0], Ned)
+                DEPRAmax = DEP_RA(Ar, er, fdc[fck][1], Mat60r, Mab60r, fda60[1], Mab50r, fda50[1], Mac190r, fda190[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2RAmin, " - ", ECO2RAmax)
+                st.write("DEP (MJ): ", DEPRAmin, " - ", DEPRAmax)
+                st.write("**RESULTADOS POR ÁREA CONSTRUÍDA**")
+                Ac = st.number_input("Área construída (m2)", min_value=40.00, step=0.01)
+                st.write("ECO2 (kg/m2): ", round(ECO2RAmin / Ac), " - ", round(ECO2RAmax / Ac))
+                st.write("DEP (MJ/m2): ", round(DEPRAmin / Ac), " - ", round(DEPRAmax / Ac))
+            elif option == "Estacas + Blocos de coroamento + Vigas":
+                st.html("<h1 style='text-align: center; font-size: 1rem;'>ESTACAS</h1>")
+                st.write("**CARACTERÍSTICAS**")
+                numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
+                Sf, D, L = [], [], []
+                for i in range(numEstDif):
+                    Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
+                    D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
+                    L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
+                st.write("**PARÂMETROS QUANTITATIVOS**")
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                Ve = st.number_input("Volume das estacas (m3)", min_value=10.00, step=0.01)
+                Mab50e = st.number_input("Massa de aço de barras CA-50 (kg)", min_value=0.00, step=0.01)
+                Mab60e = st.number_input("Massa de aço de barras CA-60 (kg)", min_value=0.00, step=0.01)
+                fck = st.selectbox("fck (MPa)", (25, 30, 40))
+                ECO2ESmin = ECO2_ES(Ve, fec[fck][0], Mab50e, fea50[0], Mab60e, fea60[0], Ned)
+                ECO2ESmax = ECO2_ES(Ve, fec[fck][1], Mab50e, fea50[1], Mab60e, fea60[1], Ned)
+                DEPESmin = DEP_ES(Ve, fdc[fck][0], Mab50e, fda50[0], Mab60e, fda60[0], Ned)
+                DEPESmax = DEP_ES(Ve, fdc[fck][1], Mab50e, fda50[1], Mab60e, fda60[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2ESmin, " - ", ECO2ESmax)
+                st.write("DEP (MJ): ", DEPESmin, " - ", DEPESmax)
+                st.html("<h1 style='text-align: center; font-size: 1rem;'>MESOESTRUTURA</h1>")
+                st.write("BLOCOS DE COROAMENTO")
+                Vbc = st.number_input("Volume de blocos de coroamento (m3)", min_value=10.00, step=0.01)
+                Mab50bc = st.number_input("Massa de aço de barras CA-50 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
+                Mab60bc = st.number_input("Massa de aço de barras CA-60 dos blocos de coroamento (kg)", min_value=0.00, step=0.01)
+                st.write("VIGAS")
+                Vvi = st.number_input("Volume de vigas (m3)", min_value=10.00, step=0.01)
+                Mab50vi = st.number_input("Massa de aço de barras CA-50 das vigas (kg)", min_value=0.00, step=0.01)
+                Mab60vi = st.number_input("Massa de aço de barras CA-60 das vigas (kg)", min_value=0.00, step=0.01)
+                fck_ME = st.selectbox("fck (MPa)", (25, 30, 40), key="fck_ME")
+                ECO2MEmin = ECO2_ME(Vbc, Vvi, fec[fck_ME][0], Mab50bc, Mab50vi, fea50[0], Mab60bc, Mab60vi, fea60[0], Ned)
+                ECO2MEmax = ECO2_ME(Vbc, Vvi, fec[fck_ME][1], Mab50bc, Mab50vi, fea50[1], Mab60bc, Mab60vi, fea60[1], Ned)
+                DEPMEmin = DEP_ME(Vbc, Vvi, fdc[fck_ME][0], Mab50bc, Mab50vi, fda50[0], Mab60bc, Mab60vi, fda60[0], Ned)
+                DEPMEmax = DEP_ME(Vbc, Vvi, fdc[fck_ME][1], Mab50bc, Mab50vi, fda50[1], Mab60bc, Mab60vi, fda60[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2MEmin, " - ", ECO2MEmax)
+                st.write("DEP (MJ): ", DEPMEmin, " - ", DEPMEmax)
+            elif option == "Radier estaqueado":
+                st.write("**CARACTERÍSTICAS DAS ESTACAS**")
+                numEstDif = st.number_input("Número de estacas diferentes", min_value=1, step=1)
+                Sf, D, L = [], [], []
+                for i in range(numEstDif):
+                    Sf.append(st.selectbox("Tipo de estaca " + str(i + 1), ("Pré-moldada", "Hélice contínua")))
+                    D.append(st.number_input("Diâmetro ou lado da estaca (m) " + str(i + 1), min_value=0.15, step=0.01))
+                    L.append(st.number_input("Comprimento da estaca (m) " + str(i + 1), min_value=1, step=1))
+                st.write("**PARÂMETROS QUANTITATIVOS**")
+                Ned = st.number_input("Número de edificações", min_value=1, step=1)
+                Ar = st.number_input("Área do radier (m2)", min_value=40.00, step=0.01)
+                er = st.number_input("Espessura do radier (m)", min_value=0.100, max_value=0.450, step=0.001, format="%0.3f")
+                Ve = st.number_input("Volume das estacas (m3)", min_value=10.00, step=0.01)
+                Mat60r = st.number_input("Massa de aço de telas do radier (kg)", min_value=0.00, step=0.01)
+                Mab60r = st.number_input("Massa de aço de barras CA-60 do radier (kg)", min_value=0.00, step=0.01)
+                Mab60e = st.number_input("Massa de aço de barras CA-60 das estacas (kg)", min_value=0.00, step=0.01)
+                Mab50r = st.number_input("Massa de aço de barras CA-50 do radier (kg)", min_value=0.00, step=0.01)
+                Mab50e = st.number_input("Massa de aço de barras CA-50 das estacas (kg)", min_value=0.00, step=0.01)
+                fck = st.selectbox("fck (MPa)", (25, 30))
+                ECO2REmin = ECO2_RE(Ar, er, Ve, fec[fck][0], Mat60r, Mab60r, Mab60e, fea60[0], Mab50r, Mab50e, fea50[0], Ned)
+                ECO2REmax = ECO2_RE(Ar, er, Ve, fec[fck][1], Mat60r, Mab60r, Mab60e, fea60[1], Mab50r, Mab50e, fea50[1], Ned)
+                DEPREmin = DEP_RE(Ar, er, Ve, fdc[fck][0], Mat60r, Mab60r, Mab60e, fda60[0], Mab50r, Mab50e, fda50[0], Ned)
+                DEPREmax = DEP_RE(Ar, er, Ve, fdc[fck][1], Mat60r, Mab60r, Mab60e, fda60[1], Mab50r, Mab50e, fda50[1], Ned)
+                st.write("**RESULTADOS**")
+                st.write("ECO2 (kg): ", ECO2REmin, " - ", ECO2REmax)
+                st.write("DEP (MJ): ", DEPREmin, " - ", DEPREmax)
+
+if etapaCons:
+    with st.container(border=True):
+        st.write("""
+        # Construção
+        Em desenvolvimento
+        """)
+
+on = st.toggle("Soluções de mitigação")
+
+if on:
+    with st.container(border=True):
+        st.write("Em desenvolvimento")
